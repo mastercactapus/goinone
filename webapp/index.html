@@ -8,18 +8,10 @@
 	<link rel="stylesheet" href="styles/main.css">
 	<script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
 	<link rel="import" href="elements/elements.html">
+	<link rel="import" href="elements/goinone-app/goinone-app.html">
 </head>
 <body unresolved class="fullbleed layout horizontal">
-
-	<iron-selector class="layout vertical" attr-for-selected="name" selected="code"> 
-		<paper-icon-button alt="Code" name="code" icon="code"></paper-icon-button>
-		<paper-icon-button name="git" icon="favorite"></paper-icon-button>
-	</iron-selector>
-	<tree-view></tree-view>
-	<div class="layout vertical">
-		<ace-editor></ace-editor>
-	</div>
-
+	<goinone-app></goinone-app>
 
 	<script src="scripts/app.js"></script>
 </body>

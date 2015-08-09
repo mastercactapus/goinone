@@ -1,20 +1,26 @@
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/paper-ripple/paper-ripple.html">
 
 <dom-module id="tree-view-node">
 
 <template>
     <style>
-      div {
+      .tree-node {
         margin-left: 24px;
         cursor: default;
         font-family: monospace;
       }
+      .item-wrapper {
+      	position: relative;
+      }
     </style>
 
-	<div>
+	<div class="tree-node">
 		<iron-ajax auto url="{{statPath}}" last-response="{{stat}}"></iron-ajax>
-		<iron-icon icon="{{iconArrow}}"></iron-icon><iron-icon icon="{{icon}}"></iron-icon><span id="self">{{name}}</span>
-		<span>{{selected}}</span>
+		<div class="item-wrapper">
+			<iron-icon icon="{{iconArrow}}"></iron-icon><iron-icon icon="{{icon}}"></iron-icon><span id="self">{{name}}</span>
+			<paper-ripple></paper-ripple>
+		</div>
 		<template is="dom-if" if="{{IsDir}}">
 			<template restamp="true" is="dom-if" if="{{expanded}}">
 				<iron-ajax auto url="{{readPath}}" last-response="{{childrenRaw}}"></iron-ajax>
@@ -73,10 +79,10 @@
 			return !!stat.IsDir;
 		},
 		computeStatPath: function(path) {
-			return "/api/fs/stat" + path;
+			return "/api/fs" + path + "?stat=1";
 		},
 		computeReadPath: function(path) {
-			return "/api/fs/read" + path;
+			return "/api/fs" + path;
 		},
 		computeChildPath: function(child) {
 			return this.path.replace(/\/$/,"") + "/" + child.Name;
@@ -113,7 +119,12 @@
 		},
 		selfTap: function(e) {
 			e.stopPropagation();
-			if (!this.stat || !this.stat.IsDir) return;
+			if (!this.stat || !this.stat.IsDir) {
+				if (this.stat) {
+					this.fire("file-selected", {filePath: this.path});
+				}
+				return;
+			};
 			this.expanded = !this.expanded;
 		}
 	});

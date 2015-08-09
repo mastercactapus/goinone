@@ -1,0 +1,34 @@
+<link rel="import" href="../../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../tree-view/tree-view.html">
+<link rel="import" href="../ace-editor/ace-editor.html">
+
+<dom-module id="goinone-app">
+<style>
+
+</style>
+<template>
+<div class="layout horizontal">
+	<!-- TODO: add recent files, sorted by switch-to frequency. -->
+
+	<iron-selector class="layout vertical" attr-for-selected="name" selected="code"> 
+		<paper-icon-button alt="Code" name="code" icon="code"></paper-icon-button>
+		<paper-icon-button name="git" icon="favorite"></paper-icon-button>
+	</iron-selector>
+	<tree-view on-file-selected="fileSelected"></tree-view>
+	<div class="layout vertical">
+		<ace-editor path="{{selectedFilePath}}"></ace-editor>
+	</div>
+</div>
+</template>
+
+<script>
+	Polymer({
+		is: "goinone-app",
+		fileSelected: function(e) {
+			this.selectedFilePath = e.detail.filePath;
+		}
+	});
+</script>
+
+</dom-module>

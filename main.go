@@ -86,6 +86,17 @@ func fsRead(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
 		return
 	}
 
+	if req.URL.Query().Get("stat") == "1" {
+		stat := NewStat(info)
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(&stat)
+		if err != nil {
+			c.Error(w, 500, err)
+			return
+		}
+		return
+	}
+
 	if info.IsDir() {
 		infos, err := ioutil.ReadDir(file)
 		if err != nil {
@@ -118,27 +129,30 @@ func fsRead(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
 		c.log.Errorln("copy operation failed:", err)
 	}
 }
-
-func fsStat(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
+func fsWrite(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
 	c := NewCtx(req)
 	defer c.Done()
 
 	file := filepath.Join(".", pm.ByName("filepath"))
-	info, err := os.Stat(file)
-	if err != nil {
-		if os.IsNotExist(err) {
-			c.Error(w, 404, err)
-		} else {
+
+	if req.URL.Query().Get("dir") == "1" {
+		err := os.Mkdir(file, 0644)
+		if err != nil {
 			c.Error(w, 500, err)
+			return
 		}
 		return
 	}
-	stat := NewStat(info)
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(&stat)
+
+	fd, err := os.Create(file)
 	if err != nil {
 		c.Error(w, 500, err)
 		return
+	}
+	defer fd.Close()
+	_, err = io.Copy(fd, req.Body)
+	if err != nil {
+		c.log.Errorln("copy operation failed:", err)
 	}
 }
 
@@ -151,8 +165,8 @@ func main() {
 	r := httprouter.New()
 	r.GET("/", index)
 	r.ServeFiles("/webapp/*filepath", http.Dir("webapp"))
-	r.GET("/api/fs/read/*filepath", fsRead)
-	r.GET("/api/fs/stat/*filepath", fsStat)
+	r.GET("/api/fs/*filepath", fsRead)
+	r.PUT("/api/fs/*filepath", fsWrite)
 
 	s := &http.Server{}
 	s.Addr = ":8080"

@@ -1,8 +1,15 @@
 <link rel="import" href="tree-view-node.html">
 
 <dom-module id="tree-view">
-
+<style>
+:host{
+	width: 400px;
+	overflow: auto;
+};
+</style>
 <template>
+<!-- TODO: add ability to create new files and folders -->
+<!-- TODO: add ability to rename files  -->
 
 	<tree-view-node
 		name="$GOPATH/src"

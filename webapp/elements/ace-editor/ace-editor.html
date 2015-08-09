@@ -1,26 +1,65 @@
-
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
 
 <dom-module id="ace-editor">
 <style>
-
       #editor {
       	position: relative;
-        height: 800px;
-        width: 400px;
+        height: 600px;
+        width: 800px;
       }
 </style>
 <template>
-
+    <paper-toast id="toast" duration="650"></paper-toast>
+	<iron-ajax url="{{computeUrl(path)}}" auto handle-as="text" last-response="{{remoteData}}"></iron-ajax>
+	<iron-ajax id="save" url="{{computeUrl(path)}}" method="PUT" on-response="fileSaved" body="{{localData}}"></iron-ajax>
 	<div id="editor"></div>
-
 </template>
 
 <script src="../../bower_components/ace-builds/src-noconflict/ace.js"></script>
+<script src="../../bower_components/ace-builds/src-noconflict/ext-modelist.js"></script>
+
 <script>
 	Polymer({
 		is: "ace-editor",
-		ready: function() {
+		properties: {
+			path: {
+				type: String,
+				value: "/"
+			},
+			remoteData: {
+				type: String,
+				value: "",
+				observer: "handleGetResponse",
+			},
+		},
+		listeners: {
+			"keydown": "handleKeypress"
+		},
+		fileSaved: function() { // TODO: check for success, on fail add retry and longer duration
+		    this.$.toast.text = "Saved: " + this.path;
+		    this.$.toast.show();
+		},
+		handleKeypress: function(e) {
+			if (!( String.fromCharCode(e.which).toLowerCase() == 's' && e.ctrlKey) && !(e.which == 19)) return true;
 			
+			this.$.save.generateRequest();
+
+			e.stopPropagation();
+			e.preventDefault();
+		},
+		handleGetResponse: function() {
+			if (!this.path || this.path === "/" || typeof this.remoteData !== "string") return;
+			var modelist = ace.require("ace/ext/modelist");
+			var mode = modelist.getModeForPath(this.path).mode;
+			this.editor.getSession().setMode(mode);
+			this.editor.setValue(this.remoteData, -1);
+		},
+		computeUrl: function(filepath) {
+			return "/api/fs" + filepath;
+		},
+		ready: function() {
+	
 		},
 		attached: function() {
 			this.initializeEditor();
@@ -30,7 +69,11 @@
 			this.editor.focus();
 			this.editor.getSession().setMode('ace/mode/javascript');
 			this.editor.setTheme("ace/theme/monokai");
+			this.editor.on("change", this.editorChangeAction.bind(this));
 			this.value = this.textContent;
+		},
+		editorChangeAction: function() {
+			this.localData = this.editor.getValue();
 		}
 	});
 </script>
