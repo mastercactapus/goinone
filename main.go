@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/bradfitz/http2"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -153,5 +154,10 @@ func main() {
 	r.GET("/api/fs/read/*filepath", fsRead)
 	r.GET("/api/fs/stat/*filepath", fsStat)
 
-	http.ListenAndServe(":8080", r)
+	s := &http.Server{}
+	s.Addr = ":8080"
+	s.Handler = r
+	http2.ConfigureServer(s, nil)
+
+	log.Fatalln(s.ListenAndServeTLS("cert.pem", "key.pem"))
 }

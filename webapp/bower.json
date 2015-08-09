@@ -22,6 +22,8 @@
     "paper-item": "PolymerElements/paper-item#~1.0.2",
     "iron-pages": "PolymerElements/iron-pages#~1.0.3",
     "paper-drawer-panel": "PolymerElements/paper-drawer-panel#~1.0.3",
-    "iron-ajax": "PolymerElements/iron-ajax#~1.0.3"
+    "iron-ajax": "PolymerElements/iron-ajax#~1.0.3",
+    "iron-selector": "PolymerElements/iron-selector#~1.0.2",
+    "ace-builds": "ajaxorg/ace-builds#~1.2.0"
   }
 }

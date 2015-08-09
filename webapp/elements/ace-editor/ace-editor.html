@@ -1,0 +1,38 @@
+
+
+<dom-module id="ace-editor">
+<style>
+
+      #editor {
+      	position: relative;
+        height: 800px;
+        width: 400px;
+      }
+</style>
+<template>
+
+	<div id="editor"></div>
+
+</template>
+
+<script src="../../bower_components/ace-builds/src-noconflict/ace.js"></script>
+<script>
+	Polymer({
+		is: "ace-editor",
+		ready: function() {
+			
+		},
+		attached: function() {
+			this.initializeEditor();
+		},
+		initializeEditor: function() {
+			this.editor = ace.edit(this.$.editor);
+			this.editor.focus();
+			this.editor.getSession().setMode('ace/mode/javascript');
+			this.editor.setTheme("ace/theme/monokai");
+			this.value = this.textContent;
+		}
+	});
+</script>
+
+</dom-module>

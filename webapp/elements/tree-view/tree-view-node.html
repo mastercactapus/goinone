@@ -5,18 +5,15 @@
 <template>
     <style>
       div {
-        margin-left: 1em;
+        margin-left: 24px;
         cursor: default;
         font-family: monospace;
-      }
-      #icon {
-      	color: gray;
       }
     </style>
 
 	<div>
 		<iron-ajax auto url="{{statPath}}" last-response="{{stat}}"></iron-ajax>
-		<span id="icon">{{icon}}</span> <span id="self">{{name}}</span>
+		<iron-icon icon="{{iconArrow}}"></iron-icon><iron-icon icon="{{icon}}"></iron-icon><span id="self">{{name}}</span>
 		<span>{{selected}}</span>
 		<template is="dom-if" if="{{IsDir}}">
 			<template restamp="true" is="dom-if" if="{{expanded}}">
@@ -37,7 +34,7 @@
 	Polymer({
 		is: "tree-view-node",
 		listeners: {
-			"self.tap": "selfTap",
+			"tap": "selfTap",
 		},
 		properties: {
 			children: {
@@ -58,8 +55,10 @@
 				computed: 'computeReadPath(path)',
 			},
 			icon: {
-				value: " ",
 				computed: 'computeIcon(IsDir, expanded)',
+			},
+			iconArrow: {
+				computed: 'computeIconArrow(IsDir, expanded)',
 			},
 			expanded: {
 				type: Boolean,
@@ -80,7 +79,7 @@
 			return "/api/fs/read" + path;
 		},
 		computeChildPath: function(child) {
-			return this.path + "/" + child.Name;
+			return this.path.replace(/\/$/,"") + "/" + child.Name;
 		},
 		computeChildren: function(childrenRaw) {
 			var dirs = [];
@@ -96,14 +95,24 @@
 		},
 		computeIcon: function(isDir, expanded) {
 			if (expanded) {
-				return "v";
+				return "folder-open";
 			}
 			if (!isDir) {
-				return " ";
+				return "editor:insert-drive-file";
 			}
-			return ">";
+			return "folder";
+		},
+		computeIconArrow: function(isDir, expanded) {
+			if (expanded) {
+				return "hardware:keyboard-arrow-down";
+			}
+			if (!isDir) {
+				return "";
+			}
+			return "hardware:keyboard-arrow-right";
 		},
 		selfTap: function(e) {
+			e.stopPropagation();
 			if (!this.stat || !this.stat.IsDir) return;
 			this.expanded = !this.expanded;
 		}
