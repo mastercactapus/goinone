@@ -1,0 +1,114 @@
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="tree-view-node">
+
+<template>
+    <style>
+      div {
+        margin-left: 1em;
+        cursor: default;
+        font-family: monospace;
+      }
+      #icon {
+      	color: gray;
+      }
+    </style>
+
+	<div>
+		<iron-ajax auto url="{{statPath}}" last-response="{{stat}}"></iron-ajax>
+		<span id="icon">{{icon}}</span> <span id="self">{{name}}</span>
+		<span>{{selected}}</span>
+		<template is="dom-if" if="{{IsDir}}">
+			<template restamp="true" is="dom-if" if="{{expanded}}">
+				<iron-ajax auto url="{{readPath}}" last-response="{{childrenRaw}}"></iron-ajax>
+				<template is="dom-repeat" items="{{children}}">
+					<tree-view-node
+						name="{{item.Name}}"
+						stat="{{item}}"
+						path="{{computeChildPath(item)}}">
+					</tree-view-node>
+				</template>
+			</template>
+		</template>
+	</div>
+</template>
+
+<script>
+	Polymer({
+		is: "tree-view-node",
+		listeners: {
+			"self.tap": "selfTap",
+		},
+		properties: {
+			children: {
+				value: [],
+				computed: 'computeChildren(childrenRaw)',
+			},
+			IsDir: {
+				type: Boolean,
+				value: false,
+				computed: 'computeIsDir(stat)',
+			},
+			statPath: {
+				type: String,
+				computed: 'computeStatPath(path)',
+			},
+			readPath: {
+				type: String,
+				computed: 'computeReadPath(path)',
+			},
+			icon: {
+				value: " ",
+				computed: 'computeIcon(IsDir, expanded)',
+			},
+			expanded: {
+				type: Boolean,
+				value: false,
+			},
+			path: {
+				type: String,
+				value: "/"
+			},
+		},
+		computeIsDir: function(stat) {
+			return !!stat.IsDir;
+		},
+		computeStatPath: function(path) {
+			return "/api/fs/stat" + path;
+		},
+		computeReadPath: function(path) {
+			return "/api/fs/read" + path;
+		},
+		computeChildPath: function(child) {
+			return this.path + "/" + child.Name;
+		},
+		computeChildren: function(childrenRaw) {
+			var dirs = [];
+			var files = [];
+			childrenRaw.forEach(function(item){
+				if (item.IsDir) {
+					dirs.push(item);
+				} else {
+					files.push(item);
+				}
+			});
+			return dirs.concat(files);
+		},
+		computeIcon: function(isDir, expanded) {
+			if (expanded) {
+				return "v";
+			}
+			if (!isDir) {
+				return " ";
+			}
+			return ">";
+		},
+		selfTap: function(e) {
+			if (!this.stat || !this.stat.IsDir) return;
+			this.expanded = !this.expanded;
+		}
+	});
+
+</script>
+
+</dom-module>
