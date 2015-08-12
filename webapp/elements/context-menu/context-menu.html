@@ -1,0 +1,76 @@
+
+<dom-module id="context-menu">
+<style>
+	#menu{
+		border: 1px #aaa solid;
+		position: absolute;
+		z-index: 99;
+		display: none;
+		overflow: hidden;
+	};
+	option {
+		padding: 4px;
+	}
+</style>
+<template>
+	<select id="menu" size$="{{itemsLength}}" value="{{selected}}">
+		<template is="dom-repeat" items="{{items}}">
+			<option disabled="{{calcItemDisabled(item)}}" value="{{calcItemValue(item)}}">{{calcItemValue(item)}}</option>
+		</template>
+	</select>
+</template>
+
+<script>
+	Polymer({
+		is: "context-menu",
+		properties: {
+			items: {
+				value: []
+			}
+		},
+		listeners: {
+			"menu.blur": "handleBlur",
+			"mouseover": "handleHover",
+			"click": "handleClick",
+		},
+		calcItemValue: function(item) {
+			if (item === "-") {
+				var maxlen = 0;
+				for (var i =0;i<this.items.length;i++){
+					var l = this.items[i].replace(/^-/,"").length;
+					if (l>maxlen) maxlen=l;
+				}
+				return new Array(maxlen).join("─");
+			} else {
+				return item.replace(/^-/, "");
+			}
+		},
+		calcItemDisabled: function(item) {
+			return (/^-/.test(item) || item === "") ? true : false;
+		},
+		calcSize: function(items) {
+			return items.length;
+		},
+		handleBlur: function(e) {
+			this.$.menu.style.display = "";
+		},
+		handleHover: function(e) {
+			this.selected = e.target.value;
+		},
+		handleClick: function(e) {
+			this.fire("context-action", {value: this.selected});
+			this.handleBlur(e);
+		},
+		show: function(x,y) {
+			this.$.menu.style.top = y + "px";
+			this.$.menu.style.left = x + "px";
+			this.$.menu.style.display = "block";
+			this.$.menu.size=this.items.length;
+			this.selected = "";
+			this.itemsLength = this.items.length;
+			this.$.menu.focus();
+		}
+	});
+</script>
+
+</dom-module>

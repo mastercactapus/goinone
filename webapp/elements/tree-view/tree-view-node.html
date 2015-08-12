@@ -1,5 +1,6 @@
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../../bower_components/paper-ripple/paper-ripple.html">
+<link rel="import" href="../context-menu/context-menu.html">
 
 <dom-module id="tree-view-node">
 
@@ -17,10 +18,13 @@
 
 	<div class="tree-node">
 		<iron-ajax auto url="{{statPath}}" last-response="{{stat}}"></iron-ajax>
-		<div class="item-wrapper">
+
+		<div class="item-wrapper" id="node">
 			<iron-icon icon="{{iconArrow}}"></iron-icon><iron-icon icon="{{icon}}"></iron-icon><span id="self">{{name}}</span>
 			<paper-ripple></paper-ripple>
 		</div>
+		<context-menu id="menu" items="{{menuItems}}" on-context-action="handleContextAction"></context-menu>
+
 		<template is="dom-if" if="{{IsDir}}">
 			<template restamp="true" is="dom-if" if="{{expanded}}">
 				<iron-ajax auto url="{{readPath}}" last-response="{{childrenRaw}}"></iron-ajax>
@@ -40,7 +44,8 @@
 	Polymer({
 		is: "tree-view-node",
 		listeners: {
-			"tap": "selfTap",
+			"node.tap": "selfTap",
+			"node.contextmenu": "handleMenu",
 		},
 		properties: {
 			children: {
@@ -66,6 +71,9 @@
 			iconArrow: {
 				computed: 'computeIconArrow(IsDir, expanded)',
 			},
+			menuItems: {
+				computed: 'computeMenuItems(IsDir)',
+			},
 			expanded: {
 				type: Boolean,
 				value: false,
@@ -74,6 +82,17 @@
 				type: String,
 				value: "/"
 			},
+			showContext: {
+				type: Boolean,
+				value: false,
+			}
+		},
+		computeMenuItems: function(isDir) {
+			if (isDir) {
+				return ["New File...", "Rename...", "-", "New Folder...", "Delete Folder", "Find in Folder..."];
+			} else {
+				return ["Rename...", "Delete File"];
+			}
 		},
 		computeIsDir: function(stat) {
 			return !!stat.IsDir;
@@ -126,6 +145,18 @@
 				return;
 			};
 			this.expanded = !this.expanded;
+		},
+		handleMenu: function(e) {
+			this.$.menu.show(e.x, e.y);
+			e.preventDefault();
+			e.stopPropagation();
+		},
+		handleContextAction: function(e){
+			switch (e.detail.value) {
+				case "New File...":
+				console.log("new file!");
+				break;
+			}
 		}
 	});
 
