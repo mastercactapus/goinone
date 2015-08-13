@@ -10,6 +10,8 @@
 	};
 	option {
 		padding: 4px;
+		padding-left: 1.5em;
+		padding-right: 1.5em;
 	}
 </style>
 <template>
@@ -53,15 +55,18 @@
 		},
 		handleBlur: function(e) {
 			this.$.menu.style.display = "";
+			this.fire("context-hide", {});
 		},
 		handleHover: function(e) {
 			this.selected = e.target.value;
 		},
 		handleClick: function(e) {
-			this.fire("context-action", {value: this.selected});
+			this.fire("context-action", {value: this.selected, x: this.x, y: this.y});
 			this.handleBlur(e);
 		},
 		show: function(x,y) {
+			this.x = x;
+			this.y = y;
 			this.$.menu.style.top = y + "px";
 			this.$.menu.style.left = x + "px";
 			this.$.menu.style.display = "block";

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/bradfitz/http2"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
@@ -136,7 +137,7 @@ func fsWrite(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
 	file := filepath.Join(".", pm.ByName("filepath"))
 
 	if req.URL.Query().Get("dir") == "1" {
-		err := os.Mkdir(file, 0644)
+		err := os.Mkdir(file, 0755)
 		if err != nil {
 			c.Error(w, 500, err)
 			return
@@ -155,6 +156,62 @@ func fsWrite(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
 		c.log.Errorln("copy operation failed:", err)
 	}
 }
+func fsDelete(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
+	c := NewCtx(req)
+	defer c.Done()
+
+	file := filepath.Join(".", pm.ByName("filepath"))
+
+	_, err := os.Stat(file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			c.Error(w, 404, err)
+		} else {
+			c.Error(w, 500, err)
+		}
+		return
+	}
+
+	err = os.RemoveAll(file)
+	if err != nil {
+		c.Error(w, 500, err)
+		return
+	}
+}
+func fsSpecial(w http.ResponseWriter, req *http.Request, pm httprouter.Params) {
+	c := NewCtx(req)
+	defer c.Done()
+
+	file := filepath.Join(".", pm.ByName("filepath"))
+
+	_, err := os.Stat(file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			c.Error(w, 404, err)
+		} else {
+			c.Error(w, 500, err)
+		}
+		return
+	}
+
+	if req.URL.Query().Get("rename") != "1" {
+		c.Error(w, 400, fmt.Errorf("invalid or unknown operation"))
+		return
+	}
+
+	newBase := req.URL.Query().Get("newbasename")
+	if newBase == "" {
+		c.Error(w, 400, fmt.Errorf("newbasename is required"))
+		return
+	}
+	newPath := filepath.Join(filepath.Dir(file), newBase)
+	err = os.Rename(file, newPath)
+
+	if err != nil {
+		c.Error(w, 500, err)
+		return
+	}
+}
 
 func index(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	w.Header().Set("Location", "webapp")
@@ -167,6 +224,8 @@ func main() {
 	r.ServeFiles("/webapp/*filepath", http.Dir("webapp"))
 	r.GET("/api/fs/*filepath", fsRead)
 	r.PUT("/api/fs/*filepath", fsWrite)
+	r.DELETE("/api/fs/*filepath", fsDelete)
+	r.POST("/api/fs/*filepath", fsSpecial)
 
 	s := &http.Server{}
 	s.Addr = ":8080"

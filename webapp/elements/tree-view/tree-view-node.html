@@ -1,6 +1,7 @@
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../../bower_components/paper-ripple/paper-ripple.html">
 <link rel="import" href="../context-menu/context-menu.html">
+<link rel="import" href="../popover-input/popover-input.html">
 
 <dom-module id="tree-view-node">
 
@@ -14,20 +15,26 @@
       .item-wrapper {
       	position: relative;
       }
+      .item-wrapper.showContext {
+      	background-color: #ddd;
+      }
     </style>
 
 	<div class="tree-node">
 		<iron-ajax auto url="{{statPath}}" last-response="{{stat}}"></iron-ajax>
 
+		<iron-ajax id="action" on-response="actionComplete"></iron-ajax>
+
 		<div class="item-wrapper" id="node">
 			<iron-icon icon="{{iconArrow}}"></iron-icon><iron-icon icon="{{icon}}"></iron-icon><span id="self">{{name}}</span>
 			<paper-ripple></paper-ripple>
 		</div>
-		<context-menu id="menu" items="{{menuItems}}" on-context-action="handleContextAction"></context-menu>
+		<context-menu id="menu" items="{{menuItems}}" on-context-hide="handleContextHide" on-context-action="handleContextAction"></context-menu>
+		<popover-input id="pop" label="new filename" on-popover-input-hide="handleInputHide" on-popover-input-submit="handleInputSubmit"></popover-input>
 
 		<template is="dom-if" if="{{IsDir}}">
 			<template restamp="true" is="dom-if" if="{{expanded}}">
-				<iron-ajax auto url="{{readPath}}" last-response="{{childrenRaw}}"></iron-ajax>
+				<iron-ajax auto url="{{readPath}}" last-response="{{childrenRaw}}" id="childreader"></iron-ajax>
 				<template is="dom-repeat" items="{{children}}">
 					<tree-view-node
 						name="{{item.Name}}"
@@ -46,6 +53,7 @@
 		listeners: {
 			"node.tap": "selfTap",
 			"node.contextmenu": "handleMenu",
+			"deleted": "handleDeleted",
 		},
 		properties: {
 			children: {
@@ -148,13 +156,81 @@
 		},
 		handleMenu: function(e) {
 			this.$.menu.show(e.x, e.y);
+			this.$.node.classList.add("showContext");
 			e.preventDefault();
 			e.stopPropagation();
 		},
+		handleContextHide: function(e){
+			this.$.node.classList.remove("showContext");
+		},
+		handleInputHide: function(e) {
+			this.$.node.classList.remove("showContext");
+		},
+		handleDeleted: function(e) {
+			if (e.detail.from === this) return;
+			var reader = this.$$("#childreader");
+			if (reader) {
+				reader.generateRequest();
+				e.stopPropagation();
+			}
+		},
 		handleContextAction: function(e){
+			this.lastAction = e.detail.value;
 			switch (e.detail.value) {
 				case "New File...":
-				console.log("new file!");
+				this.$.pop.show("New file name", "", e.detail.x, e.detail.y);
+				this.$.node.classList.add("showContext");
+				break;
+				case "New Folder...":
+				this.$.pop.show("New folder name", "", e.detail.x, e.detail.y);
+				this.$.node.classList.add("showContext");
+				break;
+				case "Delete File":
+				case "Delete Folder":
+				this.$.action.url = "/api/fs" + this.path;
+				this.$.action.method = "DELETE";
+				this.$.action.body = "";
+				this.$.action.generateRequest();
+				break;
+				case "Rename...":
+				this.$.pop.show("Rename '" + this.name + "' to", this.name, e.detail.x, e.detail.y);
+				this.$.node.classList.add("showContext");
+				break;
+			}
+		},
+		handleInputSubmit: function(e) {
+			var value = e.detail.value;
+			switch (this.lastAction) {
+				case "New File...":
+				this.$.action.url = "/api/fs" + this.path + "/" + value;
+				this.$.action.method = "PUT";
+				this.$.action.body = "";
+				this.$.action.generateRequest();
+				break;
+				case "New Folder...":
+				this.$.action.url = "/api/fs" + this.path + "/" + value + "?dir=1";
+				this.$.action.method = "PUT";
+				this.$.action.body = "";
+				this.$.action.generateRequest();
+				break;
+				case "Rename...":
+				this.$.action.url = "/api/fs" + this.path + "?rename=1&newbasename=" + encodeURIComponent(value);
+				this.$.action.method = "POST";
+				this.$.action.body = "";
+				this.$.action.generateRequest();
+				break;
+			}
+		},
+		actionComplete: function(e) {
+			switch (this.lastAction) {
+				case "New File...":
+				case "New Folder...":
+				this.$$("#childreader").generateRequest();
+				break;
+				case "Delete File":
+				case "Delete Folder":
+				case "Rename...":
+				this.fire("deleted", {from: this});
 				break;
 			}
 		}

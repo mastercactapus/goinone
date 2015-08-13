@@ -1,0 +1,47 @@
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+
+<dom-module id="popover-input">
+<style>
+#userinput {
+	position: absolute;
+	display: none;
+	z-index: 99;
+	border: 2px #aaa solid;
+	padding-left: 1em;
+	padding-right: 1em;
+	background-color: white;
+}
+</style>
+<template>
+	<paper-input label="{{label}}" id="userinput" value="{{value}}"></paper-input>
+</template>
+
+<script>
+	Polymer({
+		is: "popover-input",
+		listeners: {
+			"userinput.blur": "handleBlur",
+			"keypress": "handleKeypress",
+		},
+		handleBlur: function(e) {
+			this.$.userinput.style.display = "";
+			this.fire("popover-input-hide", {});
+		},
+		show: function(label, value, x, y){
+			this.label = label;
+			this.value = value;
+			this.$.userinput.style.display = "block";
+			this.$.userinput.style.top = y + "px";
+			this.$.userinput.style.left = x + "px";
+			this.$.userinput.$.input.focus();
+			this.$.userinput.$.input.select();
+		},
+		handleKeypress: function(e){
+			if (e.keyIdentifier !== "Enter") return;
+			this.fire("popover-input-submit", {value: this.value});
+			this.handleBlur(e);
+		}
+	});
+</script>
+
+</dom-module>
